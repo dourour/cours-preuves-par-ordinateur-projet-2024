@@ -132,13 +132,13 @@ Inductive LI : sequent -> Set :=
 | IE_impl_and : forall {Γ Γ' A B C D},
     Γ ++ [A ⇒ B ⇒ C] ++ Γ' ⊢ D ->
     Γ ++ [A ∧ B ⇒ C] ++ Γ' ⊢ D
-(*
 | IE_impl_or : forall {Γ Γ' A B C D},
     Γ ++ [A ⇒ C] ++ [B ⇒ C] ++ Γ' ⊢ D ->
     Γ ++ [A ∨ B ⇒ C] ++ Γ' ⊢ D
+
 | IE_impl_impl : forall {Γ Γ' A B C D},
     Γ ++ [A; B ⇒ C] ++ Γ' ⊢ B -> Γ ++ [C] ++ Γ' ⊢ D ->
-    Γ ++ [(A ⇒ B) ⇒ C] ++ Γ' ⊢ D *)
+    Γ ++ [(A ⇒ B) ⇒ C] ++ Γ' ⊢ D 
 where "G ⊢ A" := (LI (G ⊢? A)).
 
 (* On peut montrer la terminaison en définissant une notion de degré
@@ -600,7 +600,7 @@ LI_Decidable.
 
 
 
-Ltac NotRightForm := right;intros;inversion H.
+Ltac NotRightForm H:= right;intros;inversion H.
 
 
 
@@ -620,38 +620,38 @@ Ltac NotRightForm := right;intros;inversion H.
 
 Lemma is_provable_II_and :(Γ  ⊢ A) + {forall A1 A2 , A1 ∧ A2 = A ->  (notT (Γ ⊢ A1) \/ notT (Γ ⊢ A2))}.
 Proof.
-induction A.
--NotRightForm.
--NotRightForm.
--NotRightForm.
--specialize (IH Γ f1) as IHA1.
- specialize (IH Γ f2) as IHA2.
- destruct IHA1.
- +simpl.
+destruct A.
+-NotRightForm H.
+-NotRightForm H.
+-NotRightForm H.
+-assert (IH1 := IH Γ f1).
+ assert (IH2 := IH Γ f2).
+ destruct IH1.
+ +unfold deg_sequent.
   apply Nat.add_lt_mono_l.
-  apply (Nat.le_lt_trans (deg f1) (deg f1 + deg f2)).
-  *lia.
+  apply (Nat.le_lt_trans (deg  f1) (deg f1 + deg f2)).
+  *apply Nat.le_add_r.
   *apply deg_and_sum.
- +destruct IHA2.
-  simpl.
-  apply Nat.add_lt_mono_l.
-  *apply (Nat.le_lt_trans (deg f2) (deg f1 + deg f2)).
-   --lia.
+ +destruct IH2.
+  *unfold deg_sequent.
+   apply Nat.add_lt_mono_l.
+   apply (Nat.le_lt_trans (deg  f2) (deg f1 + deg f2)).
+   --apply Nat.le_add_l.
    --apply deg_and_sum.
   *left.
-   apply II_and.
-   --assumption.
-   --assumption.
+   apply II_and;assumption.
   *right.
+   intros.
    right.
    inversion H.
    assumption.
  +right.
-  left.
+  intros.
   inversion H.
+  left.
   assumption.
--NotRightForm.
--NotRightForm.
+-NotRightForm H.
+-NotRightForm H.
 Defined.
 
 Lemma is_provable_I_ax :(Γ  ⊢ A) + {forall Γ1 A1 Γ2 , Γ1 ++ [A1]++ Γ2= Γ ->  not (A=A1)}.
@@ -659,59 +659,46 @@ Lemma is_provable_I_ax :(Γ  ⊢ A) + {forall Γ1 A1 Γ2 , Γ1 ++ [A1]++ Γ2= Γ
 Proof.
 apply list_split_ind.
 intros.
-Search "formula".
-assert ({A=x}+{A<>x}).
--apply (formula_eq_dec A x).
--destruct H0.
- +left.
-  rewrite <- H.
-  rewrite <- e.
-  apply I_ax.
- +right.
-  assumption.
+destruct (formula_eq_dec A x).
+-left.
+ rewrite <- H.
+ rewrite <- e.
+ apply I_ax.
+ -right.
+ assumption.
 Defined.
 
 Lemma is_provable_II_top : (Γ  ⊢ A) + {A<>⊤}.
 Proof.
-assert ({A=⊤}+{A<>⊤}).
--apply (formula_eq_dec A ⊤).
--destruct H.
- +left.
-  rewrite e.
-  apply II_top.
- +right.
-  assumption.
+destruct (formula_eq_dec A ⊤).
+-left.
+ rewrite e.
+ apply II_top.
+-right.
+ assumption.
 Defined.
 
 Lemma is_provable_IE_bot : (Γ  ⊢ A) + {forall Γ1 A1 Γ2, Γ1 ++ [A1] ++ Γ2 = Γ -> A1 <> ⊥ }.
 Proof.
 apply list_split_ind.
 intros.
-assert ({x=⊥}+{x<>⊥}).
--apply formula_eq_dec.
--destruct H0.
- +left.
-  rewrite <- H.
-  rewrite e.
-  apply IE_bot.
- +right.
-  assumption.
+destruct (formula_eq_dec x ⊥).
+-left.
+ rewrite <- H.
+ rewrite e.
+ apply IE_bot.
+-right.
+ assumption.
 Defined.
 
 Lemma is_provable_IE_and : (Γ  ⊢ A)+{forall Γ1 A0 Γ2, Γ1 ++ [A0] ++ Γ2 = Γ -> forall A1 A2, A0=A1∧A2 -> notT (Γ1 ++ [A1;A2] ++ Γ2 ⊢ A) }.
 Proof.
 apply list_split_ind.
 intros.
-induction x.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
+destruct x.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
 -specialize (IH (l0 ++ [x1;x2] ++ l1)  A).
  destruct IH.
  +rewrite <-H.
@@ -725,22 +712,18 @@ induction x.
   inversion H0.
   rewrite <- H2, <- H3.
   assumption.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
+-NotRightForm H0.
+-NotRightForm H0.
 Defined.
 
 
 Lemma is_provable_II_or : (Γ  ⊢ A) + {forall A1 A2, A1 ∨ A2 = A-> (notT (Γ ⊢ A1) /\ notT (Γ ⊢ A2))}.
 Proof.
-induction A.
--NotRightForm.
--NotRightForm.
--NotRightForm.
--NotRightForm.
+destruct A.
+-NotRightForm H.
+-NotRightForm H.
+-NotRightForm H.
+-NotRightForm H.
 -specialize (IH Γ f1) as IHA1.
  specialize (IH Γ f2) as IHA2.
  destruct IHA1.
@@ -759,7 +742,7 @@ induction A.
    intros.
    inversion H.
    split;assumption.
--NotRightForm.
+-NotRightForm H.
 Defined.
 
 (*
@@ -794,21 +777,12 @@ Lemma is_provable_IE_or : (Γ  ⊢ A) + {forall Γ1 A0 Γ2, Γ1 ++[A0] ++ Γ2 = 
 Proof.
 apply list_split_ind.
 intros.
-induction x.
--right.
-intros.
-inversion H0.
--right.
-intros.
-inversion H0.
--right.
-intros.
-inversion H0.
--right.
-intros.
-inversion H0.
+destruct x.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
 -intros.
- clear IHx1; clear IHx2.
  assert (IH1 := IH (l0 ++ [x1] ++ l1) A).
  assert (IH2 := IH (l0 ++ [x2] ++ l1) A).
  destruct IH1.
@@ -832,33 +806,19 @@ inversion H0.
    inversion H0.
    rewrite <- H2.
    assumption.
--right.
-intros.
-inversion H0. 
+-NotRightForm H0.
 Defined.
 
 Lemma is_provable_II_impl : (Γ  ⊢ A) + {forall A1 A2,  A1 ⇒ A2 = A->
 (notT (Γ ++ [A1] ⊢ A2))}.
 Proof.
-induction A.
--right.
- intros.
- inversion H.
--right.
- intros.
- inversion H.
--right.
- intros.
- inversion H.
--right.
- intros.
- inversion H.
--right.
- intros.
- inversion H.
--clear IHf1.
- clear IHf2.
- specialize (IH (Γ ++[f1]) f2).
+destruct A.
+-NotRightForm H.
+-NotRightForm H.
+-NotRightForm H.
+-NotRightForm H.
+-NotRightForm H.
+-specialize (IH (Γ ++[f1]) f2).
  destruct IH.
  +apply deg_II_impl.
  +left.
@@ -877,25 +837,13 @@ apply list_split_ind.
 intros.
 apply list_split_ind.
 intros.
-induction x0.
--right.
- intros.
- inversion H1.
--right.
- intros.
- inversion H1.
--right.
- intros.
- inversion H1.
--right.
- intros.
- inversion H1.
--right.
- intros.
- inversion H1.
--clear IHx0_1.
- clear IHx0_2.
- destruct (formula_eq_dec x x0_1).
+destruct x0.
+-NotRightForm H1.
+-NotRightForm H1.
+-NotRightForm H1.
+-NotRightForm H1.
+-NotRightForm H1.
+-destruct (formula_eq_dec x x0_1).
  +specialize (IH (l0 ++ [x] ++ l2 ++ [x0_2] ++ l3)  A).
   rewrite <- H.
   rewrite <- H0.
@@ -917,8 +865,8 @@ induction x0.
  +right.
   intros.
   inversion H1.
-  rewrite H3 in n.
   destruct n.
+  rewrite H3.
   reflexivity.
 Defined.
 
@@ -929,25 +877,13 @@ apply list_split_ind.
 intros.
 apply list_split_ind.
 intros.
-induction x.
--right.
- intros.
- inversion H1.
--right.
- intros.
- inversion H1.
--right.
- intros.
- inversion H1.
--right.
- intros.
- inversion H1.
--right.
- intros.
- inversion H1.
--clear IHx1.
- clear IHx2.
- destruct (formula_eq_dec x0 x1).
+destruct x.
+-NotRightForm H1.
+-NotRightForm H1.
+-NotRightForm H1.
+-NotRightForm H1.
+-NotRightForm H1.
+-destruct (formula_eq_dec x0 x1).
  +specialize (IH (l0 ++ [x2] ++ l2 ++ [x0] ++ l3)  A).
   rewrite <- H.
   rewrite <- H0.
@@ -979,24 +915,13 @@ forall A2 , ⊤ ⇒ A2 = A1 -> notT (Γ1 ++ [A2] ++ Γ2 ⊢ A)}.
 Proof.
 apply list_split_ind.
 intros.
-induction x.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
--clear IHx1; clear IHx2.
- destruct (formula_eq_dec ⊤ x1).
+destruct x.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-destruct (formula_eq_dec ⊤ x1).
  +specialize (IH (l0 ++ [x2] ++ l1) A).
   destruct IH.
   *rewrite <-H, <-e.
@@ -1023,40 +948,107 @@ forall A2 A3 A4, A2 ∧ A3 ⇒ A4 = A1 -> notT (Γ1 ++ [A2 ⇒ A3 ⇒ A4] ++ Γ2
 Proof.
 apply list_split_ind.
 intros.
-induction x.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
--right.
- intros.
- inversion H0.
--induction x1.
- +right.
-  intros.
-  inversion H0.
- +right.
-  intros.
-  inversion H0.
- +right.
-  intros.
-  inversion H0.
- +clear IHx1; clear IHx2; clear IHx1_1;clear IHx1_2.
-  specialize (IH (l0 ++ [x1_1 ⇒ x1_2 ⇒ x2] ++ l1) A).
+destruct x.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-destruct x1.
+ +NotRightForm H0.
+ +NotRightForm H0.
+ +NotRightForm H0.
+ +specialize (IH (l0 ++ [x1_1 ⇒ x1_2 ⇒ x2] ++ l1) A).
   destruct IH.
   *rewrite <- H.
    apply deg_IE_impl_and.
   *left.
    rewrite <-H.
    apply IE_impl_and.
+   assumption.
+  *right.
+   intros.
+   inversion H0.
+   assumption.
+ +NotRightForm H0.
+ +NotRightForm H0.
+Defined.
+
+
+
+Lemma is_provable_IE_impl_or : (Γ  ⊢ A) + {forall Γ1 A1 Γ2, Γ1 ++ [A1] ++ Γ2 = Γ ->
+forall A2 A3 A4, A2 ∨ A3 ⇒ A4 = A1 -> notT (Γ1 ++ [A2 ⇒ A4] ++ [A3 ⇒ A4] ++ Γ2 ⊢ A)}.
+Proof.
+apply list_split_ind.
+intros.
+destruct x.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-destruct x1.
+ +NotRightForm H0.
+ +NotRightForm H0.
+ +NotRightForm H0.
+ +NotRightForm H0.
+ +specialize (IH (l0 ++ [x1_1 ⇒ x2] ++ [x1_2 ⇒ x2] ++ l1) A).
+  destruct IH.
+  *rewrite <- H.
+   apply deg_IE_impl_or.
+  *left.
+   rewrite <- H.
+   apply IE_impl_or.
+   assumption.
+  *right.
+   intros.
+   inversion H0.
+   assumption.
+ +right.
+  intros.
+  inversion H0.
+Defined.
+
+Lemma is_provable_IE_impl_impl : (Γ  ⊢ A) + {forall Γ1 A1 Γ2, Γ1 ++ [A1] ++ Γ2 = Γ ->
+forall A2 A3 A4, (A2 ⇒ A3) ⇒ A4 = A1 -> ((notT (Γ1 ++ [A2;A3 ⇒ A4] ++ Γ2 ⊢ A3)) \/ (notT (Γ1 ++ [A4] ++ Γ2 ⊢ A)))  }.
+Proof.
+apply list_split_ind.
+intros.
+destruct x.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-NotRightForm H0.
+-destruct x1.
+ +NotRightForm H0.
+ +NotRightForm H0.
+ +NotRightForm H0.
+ +NotRightForm H0.
+ +NotRightForm H0.
+ +assert (IH1:= IH (l0 ++ [x1_1; x1_2 ⇒ x2] ++ l1) x1_2).
+  assert (IH2:= IH (l0 ++ [x2] ++ l1) A).
+  destruct IH1.
+  *rewrite <- H.
+   apply deg_IE_impl_impl_left.
+  *destruct IH2.
+   --rewrite <- H.
+     apply deg_IE_impl_impl_right.
+   --left.
+     rewrite <- H.
+     apply IE_impl_impl.
+     ++assumption.
+     ++assumption.
+   --right.
+     intros.
+     inversion H0.
+     right.
+     assumption.
+  *right.
+   intros.
+   inversion H0.
+   left.
+   assumption.
 Defined.
 
   Lemma is_provable_rec :
@@ -1084,7 +1076,13 @@ destruct is_provable_I_ax.
                          +++++left;assumption.
                          +++++destruct is_provable_IE_impl_top.
                               ------left;assumption.
-                              ------
+                              ------destruct is_provable_IE_impl_and.
+                                    ++++++left;assumption.
+                                    ++++++destruct is_provable_IE_impl_or.
+                                          -------left;assumption.
+                                          -------destruct is_provable_IE_impl_impl.
+                                                 +++++++left;assumption.
+                                                 +++++++
 right.
 intro.
 inversion H.
@@ -1118,6 +1116,12 @@ inversion H.
  auto.
 *specialize (n6 Γ0  (⊤ ⇒ A0)  Γ' H0 A0 eq_refl).
  auto.
+*specialize (n7 Γ0  (A0 ∧ B ⇒ C)  Γ' H0 A0 B C eq_refl).
+ auto.
+*specialize (n8 Γ0  (A0 ∨ B ⇒ C)  Γ' H0 A0 B C eq_refl).
+ auto.
+*specialize (o1 Γ0  ((A0 ⇒ B) ⇒ C)  Γ' H0 A0 B C eq_refl).
+ destruct o1;auto.
 Defined.
 
 
@@ -1127,15 +1131,44 @@ End LI_Decidable.
 (* On peut facilement déduire is_provable de is_provable_rec par
    induction. Noter que le type du prouveur garantie sa correction et
    sa complétude vis-à-vis de LI ! *)
+
+Lemma is_provable_int : forall n Γ A, (deg_sequent (Γ ⊢? A)) <= n -> (Γ ⊢ A) + {notT (Γ ⊢ A)}.
+Proof.
+intro.
+induction n.
+-intros.
+ absurd (deg A <= 0).
+ +intro.
+  assert (deg A > 0).
+  *apply (Nat.lt_le_trans 0 2).
+   --auto.
+   --apply deg_at_least_two.
+  *apply (Nat.le_ngt (deg A) 0);assumption.
+ +apply (Nat.le_trans (deg A) (deg_sequent (Γ ⊢? A))).
+  *apply Nat.le_add_l.
+  *assumption.
+-intros.
+ apply (is_provable_rec (Γ ⊢? A)).
+ intros.
+ apply IHn.
+ apply Nat.lt_succ_r.
+ apply (Nat.lt_le_trans (deg_sequent (Γ' ⊢? A')) (deg_sequent (Γ ⊢? A)));assumption.
+Defined.
+
 Lemma is_provable :
   forall s,
   let '(Γ ⊢? A) := s in
   (Γ ⊢ A) + { notT (Γ ⊢ A) }.
-Admitted.
+Proof.
+intros.
+destruct s.
+apply (is_provable_int (deg_sequent (Γ ⊢? A))).
+apply Nat.le_refl.
+Defined.
 
 (* Pour écrire plus facilement les tests, on oublie les preuves et on
    réduit la réponse du prouveur à un booléen. *)
-Definition is_provable_bool '(Γ ⊢? A) : bool :=
+Definition is_provable_bool '(Γ ⊢? A) : bool := 
   if is_provable (Γ ⊢? A) then
     true
   else
